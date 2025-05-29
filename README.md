@@ -1,95 +1,125 @@
-🧠 Multi-Agent AI System
-This project is a multi-agent AI system that classifies inputs (PDF, JSON, Email), determines the intent, and routes them to specialized agents. It includes a Streamlit interface for interaction, debugging, and demonstration.
+# 🤖 Multi-Agent AI System: Intelligent Document Classifier & Router
 
-🚀 Features
-📂 Upload PDF, JSON, or Email files, or input raw text
+This project is a Multi-Agent AI System that intelligently classifies uploaded documents (PDF, JSON, or Email), detects their intent using an LLM, and routes them to specialized agents (like JSON Agent or Email Agent) for processing. It also demonstrates shared memory design and conversational feedback.
 
-🔍 Automatic format and intent classification
+🌐 **Live Demo**: [Launch the App](https://titanic-chatbo-9xjkgqmj9kekkbgxbysqjf.streamlit.app/)
 
-🤖 Routes data to appropriate agent (PDF, JSON, Email)
+---
 
-📈 Displays extracted information, analysis, and agent confidence
+## 📽️ Demo Video
 
-🕵️ History of results for comparison and review
+[Click here to watch the demo](https://drive.google.com/your-demo-link)
 
-📁 Folder Structure
-arduino
-Copy
-Edit
-.
-├── agents/
-│   ├── classifier.py
-│   ├── email_agent.py
-│   ├── json_agent.py
-│   ├── pdf_agent.py
-├── core/
-│   └── multi_agent_system.py
-├── streamlit_app.py         <- Streamlit UI entry point
-├── requirements.txt
-└── README.md
-🧩 Requirements
-Create and activate a virtual environment (optional but recommended):
+---
 
+## 🧠 System Overview
+
+- **Classifier Agent**: Identifies file format and intent using LLM (Mistral via OpenRouter).
+- **JSON Agent**: Extracts structured insights from `.json` files.
+- **Email Agent**: Parses `.eml` emails and replies based on content.
+- **Shared Memory**: Lightweight memory (JSON file/Redis) for agent coordination.
+- **Streamlit UI**: Upload files and view agent results interactively.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: [Streamlit](https://streamlit.io/)
+- **Backend**: Python
+- **LLM API**: Mistral 7B via [OpenRouter](https://openrouter.ai/)
+- **Agents**: Custom Python modules for classification, parsing, routing
+
+---
+
+## 🚀 Getting Started (Local)
+
+### 1. Clone the Repo
+
+```bash
+git clone https://github.com/yourusername/multi-agent-system.git
+cd multi-agent-system
+2. Set Up Python Environment
 bash
 Copy
 Edit
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-Install dependencies:
+source venv/bin/activate
+pip install -r requirements.txt
+3. Add API Keys
+Create a .env file:
+
+bash
+Copy
+Edit
+cp .env.example .env
+Add your OpenRouter API key:
+
+ini
+Copy
+Edit
+OPENROUTER_API_KEY=your-api-key-here
+⚙️ Run the App Locally
+bash
+Copy
+Edit
+streamlit run streamlit_app.py
+🧪 Sample Usage
+Upload any of these file types:
+
+data/sample.json
+
+data/email.eml
+
+data/invoice.pdf
+
+The app will:
+
+Classify the file type and intent
+
+Route it to the appropriate agent
+
+Display results in a readable format
+
+📦 Dependencies
+makefile
+Copy
+Edit
+requests==2.31.0
+PyPDF2==3.0.1
+streamlit>=1.25.0
+python-dotenv
+rich
+Install via:
 
 bash
 Copy
 Edit
 pip install -r requirements.txt
-Contents of requirements.txt (if not already created):
-
-txt
+📂 Project Structure
+pgsql
 Copy
 Edit
-streamlit
-matplotlib
-Add any other libraries you use (e.g., PyMuPDF, langchain, mistralai, etc.)
+multi-agent-system/
+├── agents/
+│   ├── classifier_agent.py
+│   ├── json_agent.py
+│   └── email_agent.py
+├── shared_memory/
+│   └── memory.py
+├── data/
+│   ├── sample.json
+│   └── email.eml
+├── main.py
+├── streamlit_app.py
+├── requirements.txt
+├── .env.example
+└── README.md
+✍️ Author's Notes
+LLM prompt tuning is critical for reliable format/intent classification.
 
-▶️ Run the Streamlit App
-bash
-Copy
-Edit
-streamlit run streamlit_app.py
-Then open the link that appears (usually http://localhost:8501) in your browser.
+Designed to be extensible: add more file-type agents easily.
 
-📷 Demo Screenshot
-(Optional: Add a screenshot of the UI here)
+Shared memory allows parallel agent execution and centralized data tracking.
 
-📌 Example Inputs
-Upload:
-
-A .pdf file with textual content
-
-A .json file (with business data)
-
-A .txt file representing a raw email
-
-Or paste raw email/JSON/text into the input box.
-
-📦 Output Details
-For each input, the app shows:
-
-Detected Format, Intent, and Agent
-
-Extracted metadata (emails, keys, fields, etc.)
-
-Agent confidence
-
-Structured or summarized results
-
-Raw content (collapsible)
-
-🛠️ Development Notes
-MultiAgentSystem routes input after classification
-
-Add your own logic inside each agent (email_agent.py, etc.)
-
-Classifier currently uses a rule-based or ML model approach (customizable)
-
-📄 License
-MIT License (or your preferred license)
+📜 License
+This project is licensed under the MIT License.
