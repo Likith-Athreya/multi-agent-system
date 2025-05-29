@@ -1,3 +1,5 @@
 requests==2.31.0
 PyPDF2==3.0.1
-sqlite3
+streamlit
+requests==2.31.0
+PyPDF2==3.0.1
