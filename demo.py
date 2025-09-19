@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Interactive Demo Script for Multi-Agent AI System
 Run this script to test the system with various inputs
@@ -438,4 +437,5 @@ if __name__ == "__main__":
         print("\n\n👋 Demo interrupted by user. Goodbye!")
     except Exception as e:
         print(f"\n❌ Demo error: {e}")
+
         print("Please check your API key and internet connection.")
