@@ -11,7 +11,6 @@ import PyPDF2
 from email.parser import Parser
 from email.policy import default
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -93,16 +92,12 @@ class SharedMemory:
                       extracted_fields: Dict = None):
         """Update shared context for a thread"""
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
+        cursor = conn.cursor()     
         now = datetime.datetime.now().isoformat()
-        
-        # Check if context exists
         cursor.execute('SELECT thread_id FROM context_store WHERE thread_id = ?', (thread_id,))
         exists = cursor.fetchone()
         
         if exists:
-            # Update existing
             updates = []
             params = []
             
@@ -125,7 +120,6 @@ class SharedMemory:
                 WHERE thread_id = ?
             ''', params)
         else:
-            # Insert new
             cursor.execute('''
                 INSERT INTO context_store 
                 (thread_id, sender, topic, last_extracted_fields, created_at, updated_at)
@@ -205,11 +199,7 @@ class ClassifierAgent:
     
     def classify(self, content: str, filename: str = "", thread_id: str = None) -> Dict[str, str]:
         """Classify input format and intent"""
-        
-        # Determine format based on content analysis
         format_type = self._detect_format(content, filename)
-        
-        # Use LLM to determine intent
         intent_prompt = f"""
         Analyze the following content and classify its intent. Choose from:
         - Invoice: Bills, payment requests, receipts
@@ -231,8 +221,6 @@ class ClassifierAgent:
             "intent": intent,
             "confidence": "high" if len(content) > 100 else "medium"
         }
-        
-        # Log classification
         if thread_id:
             self.shared_memory.log_processing(ProcessingResult(
                 success=True,
@@ -266,7 +254,7 @@ class ClassifierAgent:
             "JSON": "json_agent",
             "Email": "email_agent", 
             "PDF": "pdf_agent",
-            "Text": "email_agent"  # Default to email agent for text
+            "Text": "email_agent"
         }
         
         target_agent = agent_mapping.get(classification["format"], "email_agent")
@@ -283,16 +271,10 @@ class JSONAgent:
     def process(self, content: str, classification: Dict, thread_id: str) -> ProcessingResult:
         """Process JSON input"""
         try:
-            # Parse JSON
             data = json.loads(content)
             
-            # Define target schema based on intent
             target_schema = self._get_target_schema(classification["intent"])
-            
-            # Extract and reformat
             extracted = self._extract_to_schema(data, target_schema)
-            
-            # Flag anomalies
             anomalies = self._detect_anomalies(extracted, target_schema)
             
             result_data = {
@@ -301,8 +283,6 @@ class JSONAgent:
                 "anomalies": anomalies,
                 "schema_compliance": len(anomalies) == 0
             }
-            
-            # Update shared context
             self.shared_memory.update_context(
                 thread_id=thread_id,
                 extracted_fields=extracted
@@ -362,8 +342,6 @@ class JSONAgent:
     def _extract_to_schema(self, data: Dict, schema: Dict) -> Dict:
         """Extract data according to target schema"""
         extracted = {}
-        
-        # Use LLM to intelligently extract fields
         prompt = f"""
         Extract the following fields from this JSON data:
         Required fields: {schema.get('required', [])}
@@ -380,13 +358,11 @@ class JSONAgent:
         try:
             extracted = json.loads(response)
         except:
-            # Fallback to simple key matching
             all_fields = schema.get('required', []) + schema.get('optional', [])
             for field in all_fields:
                 if field in data:
                     extracted[field] = data[field]
                 else:
-                    # Try fuzzy matching
                     for key in data.keys():
                         if field.lower() in key.lower() or key.lower() in field.lower():
                             extracted[field] = data[key]
@@ -397,13 +373,9 @@ class JSONAgent:
     def _detect_anomalies(self, extracted: Dict, schema: Dict) -> list:
         """Detect anomalies or missing required fields"""
         anomalies = []
-        
-        # Check required fields
         for field in schema.get('required', []):
             if field not in extracted or extracted[field] is None:
                 anomalies.append(f"Missing required field: {field}")
-        
-        # Check data types and formats
         for field, value in extracted.items():
             if 'amount' in field.lower() or 'price' in field.lower():
                 try:
@@ -438,16 +410,9 @@ class EmailAgent:
     def process(self, content: str, classification: Dict, thread_id: str) -> ProcessingResult:
         """Process email input"""
         try:
-            # Parse email structure
             email_data = self._parse_email(content)
-            
-            # Extract key information using LLM
             extracted = self._extract_email_info(email_data, classification)
-            
-            # Determine urgency
             urgency = self._assess_urgency(email_data["body"])
-            
-            # Format for CRM
             crm_formatted = self._format_for_crm(extracted, urgency)
             
             result_data = {
@@ -456,8 +421,6 @@ class EmailAgent:
                 "urgency_level": urgency,
                 "crm_formatted": crm_formatted
             }
-            
-            # Update shared context
             self.shared_memory.update_context(
                 thread_id=thread_id,
                 sender=extracted.get("sender", ""),
@@ -488,7 +451,6 @@ class EmailAgent:
     def _parse_email(self, content: str) -> Dict:
         """Parse email structure"""
         try:
-            # Try to parse as proper email
             msg = Parser(policy=default).parsestr(content)
             
             return {
@@ -499,7 +461,6 @@ class EmailAgent:
                 "body": msg.get_payload() if msg.is_multipart() else str(msg.get_payload())
             }
         except:
-            # Fallback parsing for plain text
             lines = content.split('\n')
             email_data = {
                 "from": "",
@@ -509,7 +470,7 @@ class EmailAgent:
                 "body": content
             }
             
-            for line in lines[:10]:  # Check first 10 lines for headers
+            for line in lines[:10]:
                 if line.startswith("From:"):
                     email_data["from"] = line[5:].strip()
                 elif line.startswith("To:"):
@@ -552,7 +513,6 @@ class EmailAgent:
         try:
             extracted = json.loads(response)
         except:
-            # Fallback extraction
             extracted = {
                 "sender": email_data["from"],
                 "subject": email_data["subject"],
@@ -578,7 +538,7 @@ class EmailAgent:
             if any(keyword in body_lower for keyword in keywords):
                 return level
         
-        return "medium"  # Default
+        return "medium"
     
     def _format_for_crm(self, extracted: Dict, urgency: str) -> Dict:
         """Format extracted data for CRM system"""
@@ -600,8 +560,6 @@ class MultiAgentSystem:
     def __init__(self, api_key: str):
         self.shared_memory = SharedMemory()
         self.llm_client = LLMClient(api_key)
-        
-        # Initialize agents
         self.classifier = ClassifierAgent(self.llm_client, self.shared_memory)
         self.json_agent = JSONAgent(self.llm_client, self.shared_memory)
         self.email_agent = EmailAgent(self.llm_client, self.shared_memory)
@@ -609,7 +567,7 @@ class MultiAgentSystem:
         self.agents = {
             "json_agent": self.json_agent,
             "email_agent": self.email_agent,
-            "pdf_agent": self.email_agent  # Using email agent for PDF text
+            "pdf_agent": self.email_agent  
         }
     
     def process_input(self, content: str, filename: str = "", thread_id: str = None) -> ProcessingResult:
@@ -621,17 +579,12 @@ class MultiAgentSystem:
         logger.info(f"Processing input - Thread: {thread_id}, File: {filename}")
         
         try:
-            # Step 1: Classify and route
             target_agent, classification = self.classifier.route(content, filename, thread_id)
             
             logger.info(f"Classified as {classification['format']} with intent {classification['intent']}")
             logger.info(f"Routing to {target_agent}")
-            
-            # Step 2: Process with appropriate agent
             agent = self.agents[target_agent]
             result = agent.process(content, classification, thread_id)
-            
-            # Step 3: Log result
             self.shared_memory.log_processing(result)
             
             logger.info(f"Processing {'completed' if result.success else 'failed'}")
@@ -664,8 +617,6 @@ class MultiAgentSystem:
                 thread_id=thread_id or "unknown",
                 errors=[f"File not found: {file_path}"]
             )
-        
-        # Read file content based on extension
         try:
             if file_path.suffix.lower() == '.pdf':
                 content = self._read_pdf(file_path)
@@ -728,20 +679,14 @@ class MultiAgentSystem:
 
 def main():
     """Demo function"""
-    # You need to set your OpenRouter API key
     API_KEY = os.getenv("OPENROUTER_API_KEY", "your-api-key-here")
     
     if API_KEY == "your-api-key-here":
         print("Please set your OpenRouter API key in the OPENROUTER_API_KEY environment variable")
         return
-    
-    # Initialize system
     system = MultiAgentSystem(API_KEY)
-    
-    # Test with sample inputs
     print("=== Multi-Agent AI System Demo ===\n")
-    
-    # Test 1: JSON Invoice
+
     json_invoice = '''
     {
         "document_type": "invoice",
@@ -764,8 +709,6 @@ def main():
     if result1.success:
         print(f"Extracted: {result1.data.get('extracted_data', {})}")
     print()
-    
-    # Test 2: Email RFQ
     email_rfq = '''
     From: john.doe@company.com
     To: procurement@ourcompany.com
@@ -797,14 +740,13 @@ def main():
         print(f"Urgency: {result2.data.get('urgency_level', 'unknown')}")
         print(f"CRM Format: {result2.data.get('crm_formatted', {})}")
     print()
-    
-    # Show processing history
     print("3. Processing History:")
     history = system.get_processing_history()
-    for entry in history[:3]:  # Show last 3 entries
+    for entry in history[:3]:
         print(f"  {entry['timestamp']}: {entry['agent_type']} - {entry['source_type']}/{entry['intent']} - {entry['status']}")
     
     print("\n=== Demo Complete ===")
 
 if __name__ == "__main__":
+
     main()
